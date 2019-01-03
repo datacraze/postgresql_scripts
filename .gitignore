@@ -1,0 +1,45 @@
+# Operating System Files
+
+*.DS_Store
+Thumbs.db
+*~
+.#*
+#*
+*#
+
+# Build Files #
+
+bin
+target
+build/
+batch/build/
+out/
+.gradle
+.swp
+
+# Eclipse Project Files #
+
+.classpath
+.project
+.settings
+
+# IntelliJ IDEA Files #
+
+*.iml
+*.ipr
+*.iws
+*.idea
+.idea/*
+*.log
+
+# Spring Bootstrap artifacts
+
+dependency-reduced-pom.xml
+
+mem*.db
+
+README.html
+
+src/main/resources/version.txt
+
+logs
