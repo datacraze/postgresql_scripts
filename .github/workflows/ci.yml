@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: pip install pre-commit==4.2.0 sqlfluff==3.3.1
+      - run: pre-commit run --all-files
+      - run: bash -n docker/db/init.sh docker/docker-entrypoint.sh
+      - run: sqlfluff lint --dialect postgres tools/*.sql
+
+  docker-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - run: docker build --tag postgresql-scripts-ci:local docker
+      - name: Initialize PostgreSQL
+        run: |
+          docker run --detach --name postgresql-scripts-ci \
+            --env POSTGRES_PASSWORD=ci-postgres-password \
+            --env DC_ADMIN_USER=dc_admin \
+            --env DC_ADMIN_USER_PASSWORD=ci-admin-password-1 \
+            --env DC_READONLY_USER=dc_readonly_user \
+            --env DC_READONLY_USER_PASSWORD=ci-readonly-password-1 \
+            --env DC_DB=dc_db \
+            postgresql-scripts-ci:local
+          for attempt in {1..60}; do
+            if docker exec postgresql-scripts-ci pg_isready -U postgres -d dc_db; then
+              break
+            fi
+            sleep 1
+          done
+      - name: Verify bootstrap state
+        run: |
+          docker exec postgresql-scripts-ci psql -U postgres -d dc_db -v ON_ERROR_STOP=1 -tAc \
+            "SELECT to_regnamespace('tools') IS NULL, to_regnamespace('dba_advisor') IS NULL, pg_has_role('dc_readonly_user', 'readonly', 'member');" \
+            | grep -Fx 't|t|t'
+      - if: always()
+        run: docker rm --force postgresql-scripts-ci || true

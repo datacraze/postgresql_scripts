@@ -1,0 +1,28 @@
+services:
+
+  postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: postgresql-scripts/postgres:local
+    env_file:
+      - path: .env
+        required: true
+    environment:
+      POSTGRES_PORT: ${POSTGRES_PORT}
+    ports:
+      - 127.0.0.1:${POSTGRES_PORT}:5432
+    volumes:
+      - postgresql-scripts-data:/var/lib/postgresql/data
+    networks:
+      - postgresql-scripts
+    restart: unless-stopped
+
+networks:
+  postgresql-scripts:
+    name: postgresql-scripts
+
+volumes:
+  postgresql-scripts-data:
+    name: postgresql-scripts-data
+    driver: local

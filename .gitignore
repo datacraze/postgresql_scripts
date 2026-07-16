@@ -43,3 +43,8 @@ README.html
 src/main/resources/version.txt
 
 logs
+
+# Local credentials
+.env
+.env.*
+!.env.example
