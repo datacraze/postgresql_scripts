@@ -9,11 +9,11 @@ services:
       - path: .env
         required: true
     environment:
-      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5433}
     ports:
-      - 127.0.0.1:${POSTGRES_PORT}:5432
+      - 127.0.0.1:${POSTGRES_PORT:-5433}:5432
     volumes:
-      - postgresql-scripts-data:/var/lib/postgresql/data
+      - postgresql-scripts-data:/var/lib/postgresql
     networks:
       - postgresql-scripts
     restart: unless-stopped

@@ -11,10 +11,10 @@ SELECT
     n_live_tup,
     seq_tup_read,
     round(
-        100.0 * seq_scan / nullif(seq_scan + idx_scan, 0),
+        100.0 * seq_scan / nullif(seq_scan + coalesce(idx_scan, 0), 0),
         1
     ) AS sequential_scan_pct
 FROM pg_stat_user_tables
-WHERE seq_scan + idx_scan > 0
+WHERE seq_scan + coalesce(idx_scan, 0) > 0
 ORDER BY seq_tup_read DESC
 LIMIT 20;

@@ -18,8 +18,8 @@ requirement for using a script.
 | [`070_q_sequential_scan_candidates.sql`](tools/070_q_sequential_scan_candidates.sql) | Lists tables with observed sequential-read pressure. | Sequential scans are often correct. |
 | [`080_q_table_cache_hit_ratio.sql`](tools/080_q_table_cache_hit_ratio.sql) | Shows table shared-buffer hit ratios. | Investigate workload before tuning. |
 | [`090_q_index_cache_hit_ratio.sql`](tools/090_q_index_cache_hit_ratio.sql) | Shows index shared-buffer hit ratios. | Investigate workload before tuning. |
-| [`100_q_xid_wraparound_risk.sql`](tools/100_q_xid_wraparound_risk.sql) | Reports database and table XID age. | Coordinate remediation with a DBA. |
-| [`110_q_idle_in_transaction.sql`](tools/110_q_idle_in_transaction.sql) | Finds idle open transactions. | Query text and identity metadata are omitted. |
+| [`100_q_xid_wraparound_risk.sql`](tools/100_q_xid_wraparound_risk.sql) | Reports database, table, and TOAST XID age. | Coordinate remediation with a DBA. |
+| [`110_q_idle_in_transaction.sql`](tools/110_q_idle_in_transaction.sql) | Finds idle open transactions cluster-wide. | Query text and identity metadata are omitted. |
 | [`120_q_autovacuum_recency.sql`](tools/120_q_autovacuum_recency.sql) | Lists maintenance timestamps for active tables. | Interpret with churn and autovacuum policy. |
 | [`130_q_hot_update_ratio.sql`](tools/130_q_hot_update_ratio.sql) | Finds update-heavy tables with low HOT activity. | Not a direct fillfactor recommendation. |
 | [`140_q_write_pattern.sql`](tools/140_q_write_pattern.sql) | Summarizes cumulative write patterns. | Counters are not bounded to a reporting period. |
@@ -42,10 +42,15 @@ view or grant.
 [`docker/`](docker/) is an optional reproducible local PostgreSQL environment.
 It is useful for testing and experimentation, but the SQL tools do not depend
 on it. The image initializes only its database infrastructure; it does not
-install any `tools/` script. Run the needed diagnostic explicitly.
+install any `tools/` script. Run the needed diagnostic explicitly. The image
+preloads `pg_stat_statements`, and the bootstrap installs the
+`pg_stat_statements` and `pgstattuple` extensions in the configured database
+so every `tools/` script can run against it.
 
 Copy `docker/.env.example` to `docker/.env` and replace every password
-placeholder with a unique value of at least 16 characters. Initialization is
+placeholder with a unique value of at least 16 characters. `POSTGRES_PORT`
+defaults to `5433` when unset. The Compose file uses the `env_file` long
+syntax, which requires Docker Compose 2.24 or newer. Initialization is
 one-time: remove the local Docker volume before changing the database or role
 configuration. A failed bootstrap leaves no completion marker and is refused on
 subsequent starts; remove the volume, correct the configuration, and retry.

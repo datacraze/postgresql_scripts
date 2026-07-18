@@ -23,6 +23,6 @@ SELECT
         100.0 * blks_hit / nullif(blks_hit + blks_read, 0),
         2
     ) AS cache_hit_pct,
-    pg_size_pretty(temp_bytes) AS temp_bytes
+    pg_size_pretty(temp_bytes) AS temp_size
 FROM pg_stat_database
 WHERE datname = current_database();

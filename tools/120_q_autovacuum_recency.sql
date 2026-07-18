@@ -1,4 +1,5 @@
--- Purpose: show large tables with their latest vacuum and analyze timestamps.
+-- Purpose: show tables with live rows and their latest vacuum and analyze
+-- timestamps.
 -- Requires: access to pg_stat_user_tables.
 -- Usage: run directly with psql; this is a read-only SELECT query.
 -- Limitation: timestamps must be interpreted with table churn and autovacuum

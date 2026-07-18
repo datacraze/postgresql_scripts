@@ -15,6 +15,9 @@ Each numbered file creates one idempotent, security-invoker view in the
 `dba_advisor` schema.
 Run `001_create_dba_advisor_schema.sql` once, then run only the view needed for
 the current investigation or install all views in numeric order.
+Every installation file pins `search_path` to `pg_catalog` for the session so
+view definitions bind to system-catalog objects; the created views themselves
+are schema-qualified into `dba_advisor`.
 
 Scripts numbered `070` and later are standalone read-only queries. They do not
 require the `dba_advisor` schema and can be run individually.
@@ -48,6 +51,10 @@ Review and adapt `grants.example.sql`; it is not safe to execute unchanged.
 - Candidate views do not prove an index should be created or removed. Review
   constraints, replica identity, workload history, query plans, and maintenance
   windows before any change.
+- `missing_fk_index_candidates` requires an index that leads with the
+  foreign-key columns in constraint order, so a usable permuted index (foreign
+  key on `(a, b)` served by an index on `(b, a)`) is still reported as a
+  candidate.
 - These views need catalog-statistics visibility. Grant the least privilege
   needed for the intended diagnostic role; the returned scope reflects that
   role's visibility.

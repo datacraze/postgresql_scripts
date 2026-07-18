@@ -3,6 +3,8 @@
 -- Requires: access to pg_database, pg_class, and pg_namespace.
 -- Usage: run directly with psql; this is a read-only SELECT query.
 -- Limitation: coordinate any remediation with an authorized DBA.
+-- Limitation: TOAST tables carry their own relfrozenxid and are reported
+-- under the pg_toast schema.
 
 WITH freeze_settings AS (
     SELECT current_setting('autovacuum_freeze_max_age')::int AS freeze_max_age
@@ -39,9 +41,9 @@ INNER JOIN pg_namespace AS namespace
     ON table_relation.relnamespace = namespace.oid
 CROSS JOIN freeze_settings
 WHERE
-    table_relation.relkind IN ('r', 'm')
+    table_relation.relkind IN ('r', 'm', 't')
     AND namespace.nspname NOT IN (
-        'pg_catalog', 'information_schema', 'pg_toast'
+        'pg_catalog', 'information_schema'
     )
 ORDER BY xid_age DESC
 LIMIT 50;

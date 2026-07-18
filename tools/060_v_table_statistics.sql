@@ -4,6 +4,8 @@
 -- Usage: SELECT * FROM dba_advisor.table_statistics;
 -- Limitation: counters require workload and statistics-reset context.
 
+SET search_path = pg_catalog;
+
 CREATE OR REPLACE VIEW dba_advisor.table_statistics
 WITH (security_invoker = true) AS
 SELECT

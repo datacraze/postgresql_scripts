@@ -2,6 +2,11 @@
 -- Requires: PostgreSQL 15+, catalog visibility, and the dba_advisor schema.
 -- Usage: SELECT * FROM dba_advisor.missing_fk_index_candidates;
 -- Limitation: validate workload and query plans before creating an index.
+-- Limitation: matching requires the index to lead with the foreign-key
+-- columns in constraint order, so a usable permuted index (foreign key on
+-- (a, b) served by an index on (b, a)) is still reported as a candidate.
+
+SET search_path = pg_catalog;
 
 CREATE OR REPLACE VIEW dba_advisor.missing_fk_index_candidates
 WITH (security_invoker = true) AS

@@ -4,6 +4,8 @@
 -- Privacy: query text, client addresses, roles, and application names are
 -- intentionally omitted.
 
+SET search_path = pg_catalog;
+
 CREATE OR REPLACE VIEW dba_advisor.active_sessions
 WITH (security_invoker = true) AS
 SELECT

@@ -21,7 +21,10 @@ role_exists() {
     local result
 
     result=$(psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d postgres \
-        -v role_name="$role_name" -tAc "SELECT 1 FROM pg_roles WHERE rolname = :'role_name'")
+        -v role_name="$role_name" -tA <<'EOSQL'
+SELECT 1 FROM pg_roles WHERE rolname = :'role_name';
+EOSQL
+    )
     [ "$result" = '1' ]
 }
 
@@ -54,7 +57,10 @@ database_exists() {
     local result
 
     result=$(psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d postgres \
-        -v database_name="$DC_DB" -tAc "SELECT 1 FROM pg_database WHERE datname = :'database_name'")
+        -v database_name="$DC_DB" -tA <<'EOSQL'
+SELECT 1 FROM pg_database WHERE datname = :'database_name';
+EOSQL
+    )
     [ "$result" = '1' ]
 }
 
@@ -73,6 +79,13 @@ REVOKE ALL ON DATABASE :"database_name" FROM PUBLIC;
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 GRANT CONNECT, TEMPORARY ON DATABASE :"database_name" TO :"admin_role";
 GRANT CONNECT ON DATABASE :"database_name" TO :"readonly_role";
+EOSQL
+}
+
+install_diagnostic_extensions() {
+    psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$DC_DB" <<'EOSQL'
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+CREATE EXTENSION IF NOT EXISTS pgstattuple;
 EOSQL
 }
 
@@ -124,4 +137,5 @@ fi
 
 create_database
 configure_access
+install_diagnostic_extensions
 touch "$PGDATA/.postgresql-scripts-bootstrap-complete"

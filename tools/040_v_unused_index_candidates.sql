@@ -3,6 +3,8 @@
 -- Usage: SELECT * FROM dba_advisor.unused_index_candidates;
 -- Limitation: counters are cumulative; low scans alone do not justify removal.
 
+SET search_path = pg_catalog;
+
 CREATE OR REPLACE VIEW dba_advisor.unused_index_candidates
 WITH (security_invoker = true) AS
 WITH database_stats AS (

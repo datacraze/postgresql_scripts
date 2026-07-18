@@ -4,6 +4,8 @@
 -- Privacy: query text, client addresses, roles, and application names are
 -- intentionally omitted.
 
+SET search_path = pg_catalog;
+
 CREATE OR REPLACE VIEW dba_advisor.lock_waits
 WITH (security_invoker = true) AS
 SELECT

@@ -60,5 +60,37 @@ jobs:
           done
           docker logs postgresql-scripts-ci
           exit 1
+      - name: Create diagnostic fixtures
+        run: |
+          docker exec postgresql-scripts-ci psql -U postgres -d dc_db \
+            -v ON_ERROR_STOP=1 \
+            -c 'CREATE TABLE public.example_table (id integer)' \
+            -c 'CREATE INDEX example_index ON public.example_table (id)' \
+            -c 'INSERT INTO public.example_table SELECT * FROM generate_series(1, 1000)' \
+            -c 'ANALYZE public.example_table'
+      - name: Install diagnostic views
+        run: |
+          docker cp tools postgresql-scripts-ci:/tools
+          for script in tools/0[0-6]*.sql; do
+            docker exec postgresql-scripts-ci psql -U postgres -d dc_db \
+              -v ON_ERROR_STOP=1 -f "/$script"
+          done
+      - name: Query every diagnostic view
+        run: |
+          view_scripts=(tools/0[1-6]0_v_*.sql)
+          expected=${#view_scripts[@]}
+          view_count=$(docker exec postgresql-scripts-ci psql -U postgres -d dc_db \
+            -v ON_ERROR_STOP=1 -tAc \
+            "SELECT count(*) FROM pg_views WHERE schemaname = 'dba_advisor'")
+          [ "$view_count" -eq "$expected" ]
+          echo "SELECT format('SELECT count(*) FROM %I.%I;', schemaname, viewname) FROM pg_views WHERE schemaname = 'dba_advisor' ORDER BY viewname \gexec" \
+            | docker exec --interactive postgresql-scripts-ci psql -U postgres -d dc_db \
+              -v ON_ERROR_STOP=1
+      - name: Run standalone diagnostic queries
+        run: |
+          for script in tools/0[7-9]*.sql tools/1*.sql tools/2*.sql; do
+            docker exec postgresql-scripts-ci psql -U postgres -d dc_db \
+              -v ON_ERROR_STOP=1 -f "/$script"
+          done
       - if: always()
-        run: docker rm --force postgresql-scripts-ci || true
+        run: docker rm --force --volumes postgresql-scripts-ci || true

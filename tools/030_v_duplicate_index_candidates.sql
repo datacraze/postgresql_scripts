@@ -3,6 +3,8 @@
 -- Usage: SELECT * FROM dba_advisor.duplicate_index_candidates;
 -- Limitation: every row is a review candidate, never an automatic drop command.
 
+SET search_path = pg_catalog;
+
 CREATE OR REPLACE VIEW dba_advisor.duplicate_index_candidates
 WITH (security_invoker = true) AS
 WITH index_signatures AS (
@@ -14,35 +16,35 @@ WITH index_signatures AS (
         pg_get_indexdef(index_relation.oid) AS index_definition,
         format(
             '%s|%s|%s|%s|%s|%s',
-            index_definition.indkey,
-            index_definition.indclass,
-            index_definition.indcollation,
-            index_definition.indoption,
+            index_catalog.indkey,
+            index_catalog.indclass,
+            index_catalog.indcollation,
+            index_catalog.indoption,
             coalesce(
                 pg_get_expr(
-                    index_definition.indexprs, index_definition.indrelid
+                    index_catalog.indexprs, index_catalog.indrelid
                 ),
                 ''
             ),
             coalesce(
                 pg_get_expr(
-                    index_definition.indpred, index_definition.indrelid
+                    index_catalog.indpred, index_catalog.indrelid
                 ),
                 ''
             )
         ) AS index_signature
-    FROM pg_index AS index_definition
+    FROM pg_index AS index_catalog
     INNER JOIN pg_class AS index_relation
-        ON index_definition.indexrelid = index_relation.oid
+        ON index_catalog.indexrelid = index_relation.oid
     INNER JOIN pg_class AS table_relation
-        ON index_definition.indrelid = table_relation.oid
+        ON index_catalog.indrelid = table_relation.oid
     INNER JOIN pg_namespace AS namespace
         ON table_relation.relnamespace = namespace.oid
     WHERE
-        index_definition.indisvalid
-        AND index_definition.indisready
-        AND NOT index_definition.indisprimary
-        AND NOT index_definition.indisunique
+        index_catalog.indisvalid
+        AND index_catalog.indisready
+        AND NOT index_catalog.indisprimary
+        AND NOT index_catalog.indisunique
         AND NOT EXISTS (
             SELECT 1
             FROM pg_constraint AS constraint_definition
